@@ -14,7 +14,7 @@ export { getModelCapability }
 
 export const imageGenerationRequestSchema = z
   .object({
-    model: z.custom<RightCodesModelId>((value) => typeof value === 'string' && Boolean(getModelCapability(value))),
+    model: z.string().transform((value) => value as RightCodesModelId),
     prompt: z.string().trim().min(3, 'Prompt must be at least 3 characters.').max(4000),
     negativePrompt: z.string().trim().max(1000).optional().default(''),
     resolution: z.enum(RESOLUTIONS),

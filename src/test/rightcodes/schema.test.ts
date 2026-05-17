@@ -31,4 +31,17 @@ describe('image generation schema', () => {
   it('returns model capabilities', () => {
     expect(getModelCapability('nano-banana-pro')?.resolutions).toEqual(['1K', '2K', '4K'])
   })
+
+  it('rejects unknown model with custom message', () => {
+    expect(() =>
+      imageGenerationRequestSchema.parse({
+        model: 'unknown-model',
+        prompt: 'A quiet mountain cabin',
+        resolution: '1K',
+        aspectRatio: '1:1',
+        quality: 'standard',
+        count: 1
+      })
+    ).toThrow(/Unknown Right Codes model/)
+  })
 })
