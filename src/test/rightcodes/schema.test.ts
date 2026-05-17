@@ -16,16 +16,22 @@ describe('image generation schema', () => {
   })
 
   it('rejects 4K for gpt-image-2 because that model is 1K only', () => {
-    expect(() =>
-      imageGenerationRequestSchema.parse({
-        model: 'gpt-image-2',
-        prompt: 'A quiet mountain cabin',
-        resolution: '4K',
-        aspectRatio: '1:1',
-        quality: 'standard',
-        count: 1
-      })
-    ).toThrow(/does not support 4K/)
+    const result = imageGenerationRequestSchema.safeParse({
+      model: 'gpt-image-2',
+      prompt: 'A quiet mountain cabin',
+      resolution: '4K',
+      aspectRatio: '1:1',
+      quality: 'standard',
+      count: 1
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) {
+      return
+    }
+
+    expect(result.error.issues[0]?.path).toEqual(['resolution'])
+    expect(result.error.issues[0]?.message).toMatch(/does not support 4K/)
   })
 
   it('returns model capabilities', () => {
@@ -33,15 +39,48 @@ describe('image generation schema', () => {
   })
 
   it('rejects unknown model with custom message', () => {
-    expect(() =>
-      imageGenerationRequestSchema.parse({
-        model: 'unknown-model',
-        prompt: 'A quiet mountain cabin',
-        resolution: '1K',
-        aspectRatio: '1:1',
-        quality: 'standard',
-        count: 1
-      })
-    ).toThrow(/Unknown Right Codes model/)
+    const result = imageGenerationRequestSchema.safeParse({
+      model: 'unknown-model',
+      prompt: 'A quiet mountain cabin',
+      resolution: '1K',
+      aspectRatio: '1:1',
+      quality: 'standard',
+      count: 1
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) {
+      return
+    }
+
+    expect(result.error.issues[0]?.path).toEqual(['model'])
+    expect(result.error.issues[0]?.message).toMatch(/Unknown Right Codes model/)
+  })
+
+  it('applies defaults for optional fields', () => {
+    const result = imageGenerationRequestSchema.parse({
+      model: 'gpt-image-2-vip',
+      prompt: 'A cinematic product photo of a handmade lamp',
+      resolution: '2K',
+      aspectRatio: '16:9',
+      quality: 'high'
+    })
+
+    expect(result.negativePrompt).toBe('')
+    expect(result.styleHint).toBe('')
+    expect(result.count).toBe(1)
+  })
+
+  it('accepts empty reference image url', () => {
+    const result = imageGenerationRequestSchema.parse({
+      model: 'gpt-image-2-vip',
+      prompt: 'A cinematic product photo of a handmade lamp',
+      resolution: '2K',
+      aspectRatio: '16:9',
+      quality: 'high',
+      referenceImageUrl: ''
+    })
+
+    expect(result.referenceImageUrl).toBe('')
   })
 })

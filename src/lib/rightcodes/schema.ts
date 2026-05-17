@@ -14,7 +14,7 @@ export { getModelCapability }
 
 export const imageGenerationRequestSchema = z
   .object({
-    model: z.string().transform((value) => value as RightCodesModelId),
+    model: z.string(),
     prompt: z.string().trim().min(3, 'Prompt must be at least 3 characters.').max(4000),
     negativePrompt: z.string().trim().max(1000).optional().default(''),
     resolution: z.enum(RESOLUTIONS),
@@ -44,6 +44,10 @@ export const imageGenerationRequestSchema = z
       })
     }
   })
+  .transform((value) => ({
+    ...value,
+    model: value.model as RightCodesModelId
+  }))
 
 export type ImageGenerationRequest = z.infer<typeof imageGenerationRequestSchema>
 export type { AspectRatio, Quality, Resolution, RightCodesModelId }

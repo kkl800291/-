@@ -6,23 +6,7 @@ export type Resolution = (typeof RESOLUTIONS)[number]
 export type AspectRatio = (typeof ASPECT_RATIOS)[number]
 export type Quality = (typeof QUALITIES)[number]
 
-export type RightCodesModelId =
-  | 'gpt-image-2'
-  | 'gpt-image-2-vip'
-  | 'nano-banana'
-  | 'nano-banana-2'
-  | 'nano-banana-pro'
-
-export type ModelCapability = {
-  id: RightCodesModelId
-  name: string
-  description: string
-  resolutions: Resolution[]
-  defaultResolution: Resolution
-  supportsReferenceImage: boolean
-}
-
-export const RIGHTCODES_MODELS: ModelCapability[] = [
+export const RIGHTCODES_MODELS = [
   {
     id: 'gpt-image-2-vip',
     name: 'GPT Image 2 VIP',
@@ -63,8 +47,32 @@ export const RIGHTCODES_MODELS: ModelCapability[] = [
     defaultResolution: '2K',
     supportsReferenceImage: true
   }
-]
+] as const satisfies ReadonlyArray<{
+  id: string
+  name: string
+  description: string
+  resolutions: readonly Resolution[]
+  defaultResolution: Resolution
+  supportsReferenceImage: boolean
+}>
 
-export function getModelCapability(model: string) {
-  return RIGHTCODES_MODELS.find((item) => item.id === model)
+export type RightCodesModelId = (typeof RIGHTCODES_MODELS)[number]['id']
+
+export type ModelCapability = {
+  id: RightCodesModelId
+  name: string
+  description: string
+  resolutions: readonly Resolution[]
+  defaultResolution: Resolution
+  supportsReferenceImage: boolean
+}
+
+export function getModelCapability(model: string): ModelCapability | undefined {
+  const capability = RIGHTCODES_MODELS.find((item) => item.id === model)
+  return capability
+    ? {
+        ...capability,
+        resolutions: [...capability.resolutions]
+      }
+    : undefined
 }
