@@ -15,7 +15,8 @@ export function CanvasPreview({ imageUrl, loading, status, error }: CanvasPrevie
     <section className="flex min-h-[520px] items-center justify-center rounded-lg border border-line bg-panel shadow-workbench">
       {imageUrl ? (
         <div className="grid w-full gap-4 p-4">
-          <img src={imageUrl} alt="Generated result" className="mx-auto max-h-[68vh] rounded-md object-contain" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- Generated image URLs are arbitrary external provider URLs, so next/image remote allowlisting is not practical here. */}
+          <img src={imageUrl} alt="Generated result" className="mx-auto max-h-[68vh] max-w-full rounded-md object-contain" />
           <Button icon={<Download size={17} />} onClick={() => window.open(imageUrl, '_blank')} className="justify-self-center">
             打开原图
           </Button>

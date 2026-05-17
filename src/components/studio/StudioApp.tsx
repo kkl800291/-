@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RIGHTCODES_MODELS } from '@/lib/rightcodes/models'
 import type { ImageGenerationRequest } from '@/lib/rightcodes/schema'
 import { CanvasPreview } from './CanvasPreview'
 import { ControlPanel } from './ControlPanel'
 import { HistoryRail } from './HistoryRail'
 import { PromptComposer } from './PromptComposer'
+import { drainSseBlocks, parseSseBlock, type StudioStreamEvent } from './sse'
 
 type HistoryItem = {
   id: string
@@ -50,28 +51,94 @@ export function StudioApp() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<HistoryItem[]>([])
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const inFlightRef = useRef(false)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
-    const stored = window.localStorage.getItem('rightcodes-history')
-    if (stored) setHistory(parseHistory(stored).slice(0, 24))
+    try {
+      const stored = window.localStorage.getItem('rightcodes-history')
+      if (stored) setHistory(parseHistory(stored).slice(0, 24))
+    } catch {
+      setHistory([])
+    }
   }, [])
 
   useEffect(() => {
-    window.localStorage.setItem('rightcodes-history', JSON.stringify(history.slice(0, 24)))
+    try {
+      window.localStorage.setItem('rightcodes-history', JSON.stringify(history.slice(0, 24)))
+    } catch {
+      // Storage can be unavailable in restricted browsing contexts.
+    }
   }, [history])
 
+  useEffect(() => {
+    return () => {
+      requestIdRef.current += 1
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+      inFlightRef.current = false
+    }
+  }, [])
+
   async function generate() {
+    if (inFlightRef.current) return
+
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    abortControllerRef.current = abortController
+    inFlightRef.current = true
+
     setLoading(true)
     setError('')
     setStatus('连接 Right Codes...')
     setImageUrl('')
 
+    function isCurrentRequest() {
+      return requestIdRef.current === requestId
+    }
+
+    function handleStreamEvent(streamEvent: StudioStreamEvent) {
+      if (!isCurrentRequest()) return
+
+      if (streamEvent.malformed) {
+        if (streamEvent.event === 'error') throw new Error('生成失败')
+        setStatus('收到无法解析的流事件，已跳过')
+        return
+      }
+
+      const { data, event } = streamEvent
+      const firstUrl = data.urls?.[0]
+
+      if (event === 'status' && data.message) setStatus(data.message)
+      if (event === 'images' && firstUrl) setImageUrl(firstUrl)
+      if (event === 'done' && firstUrl) {
+        setImageUrl(firstUrl)
+        setHistory((items) => [{ id: crypto.randomUUID(), imageUrl: firstUrl, prompt: request.prompt }, ...items].slice(0, 24))
+      }
+      if (event === 'error') throw new Error(data.message || '生成失败')
+    }
+
+    function processBuffer(nextBuffer: string, flush = false) {
+      const { blocks, remainder } = drainSseBlocks(nextBuffer, flush)
+      for (const block of blocks) {
+        const streamEvent = parseSseBlock(block)
+        if (streamEvent) handleStreamEvent(streamEvent)
+      }
+      return remainder
+    }
+
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
+        signal: abortController.signal
       })
+
+      if (!isCurrentRequest()) return
 
       if (!response.ok || !response.body) {
         const detail = await response.json().catch(() => ({}))
@@ -88,35 +155,25 @@ export function StudioApp() {
           if (done) break
 
           buffer += decoder.decode(value, { stream: true })
-          const events = buffer.split('\n\n')
-          buffer = events.pop() ?? ''
-
-          for (const eventBlock of events) {
-            const dataLine = eventBlock.split('\n').find((line) => line.startsWith('data: '))
-            const eventLine = eventBlock.split('\n').find((line) => line.startsWith('event: '))
-            if (!dataLine || !eventLine) continue
-
-            const event = eventLine.replace('event: ', '')
-            const data = JSON.parse(dataLine.replace('data: ', '')) as { message?: string; urls?: string[] }
-
-            if (event === 'status' && data.message) setStatus(data.message)
-            if (event === 'images' && data.urls?.[0]) setImageUrl(data.urls[0])
-            const firstUrl = data.urls?.[0]
-            if (event === 'done' && firstUrl) {
-              setImageUrl(firstUrl)
-              setHistory((items) => [{ id: crypto.randomUUID(), imageUrl: firstUrl, prompt: request.prompt }, ...items].slice(0, 24))
-            }
-            if (event === 'error') throw new Error(data.message || '生成失败')
-          }
+          buffer = processBuffer(buffer)
         }
+
+        buffer += decoder.decode()
+        processBuffer(buffer, true)
       } finally {
         reader.releaseLock()
       }
     } catch (generationError) {
-      setError(generationError instanceof Error ? generationError.message : '生成失败')
+      if (!isCurrentRequest()) return
+      const isAbortError = generationError instanceof Error && generationError.name === 'AbortError'
+      if (!isAbortError) setError(generationError instanceof Error ? generationError.message : '生成失败')
     } finally {
-      setLoading(false)
-      setStatus('')
+      if (isCurrentRequest()) {
+        setLoading(false)
+        setStatus('')
+        inFlightRef.current = false
+        abortControllerRef.current = null
+      }
     }
   }
 
