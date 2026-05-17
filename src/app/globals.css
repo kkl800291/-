@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #f6efe3;
+  background-image:
+    radial-gradient(circle at 15% 18%, rgba(226, 109, 90, 0.14), transparent 32%),
+    radial-gradient(circle at 82% 12%, rgba(73, 107, 75, 0.12), transparent 38%),
+    linear-gradient(180deg, #f9f3e8 0%, #f3eadc 100%);
+  color: #1c140f;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
