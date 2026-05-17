@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { readHistory, type StoredImage, writeHistory } from '@/lib/history'
 import { RIGHTCODES_MODELS } from '@/lib/rightcodes/models'
 import type { ImageGenerationRequest } from '@/lib/rightcodes/schema'
 import { CanvasPreview } from './CanvasPreview'
@@ -8,12 +9,6 @@ import { ControlPanel } from './ControlPanel'
 import { HistoryRail } from './HistoryRail'
 import { PromptComposer } from './PromptComposer'
 import { drainSseBlocks, parseSseBlock, type StudioStreamEvent } from './sse'
-
-type HistoryItem = {
-  id: string
-  imageUrl: string
-  prompt: string
-}
 
 const initialRequest: ImageGenerationRequest = {
   model: RIGHTCODES_MODELS[0].id,
@@ -27,49 +22,23 @@ const initialRequest: ImageGenerationRequest = {
   referenceImageUrl: ''
 }
 
-function parseHistory(stored: string): HistoryItem[] {
-  try {
-    const parsed = JSON.parse(stored)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (item): item is HistoryItem =>
-        Boolean(item) &&
-        typeof item === 'object' &&
-        typeof (item as { id?: unknown }).id === 'string' &&
-        typeof (item as { imageUrl?: unknown }).imageUrl === 'string' &&
-        typeof (item as { prompt?: unknown }).prompt === 'string'
-    )
-  } catch {
-    return []
-  }
-}
-
 export function StudioApp() {
   const [request, setRequest] = useState<ImageGenerationRequest>(initialRequest)
   const [imageUrl, setImageUrl] = useState('')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [history, setHistory] = useState<HistoryItem[]>([])
+  const [history, setHistory] = useState<StoredImage[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
   const inFlightRef = useRef(false)
   const requestIdRef = useRef(0)
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem('rightcodes-history')
-      if (stored) setHistory(parseHistory(stored).slice(0, 24))
-    } catch {
-      setHistory([])
-    }
+    setHistory(readHistory())
   }, [])
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem('rightcodes-history', JSON.stringify(history.slice(0, 24)))
-    } catch {
-      // Storage can be unavailable in restricted browsing contexts.
-    }
+    writeHistory(history)
   }, [history])
 
   useEffect(() => {
@@ -116,7 +85,17 @@ export function StudioApp() {
       if (event === 'images' && firstUrl) setImageUrl(firstUrl)
       if (event === 'done' && firstUrl) {
         setImageUrl(firstUrl)
-        setHistory((items) => [{ id: crypto.randomUUID(), imageUrl: firstUrl, prompt: request.prompt }, ...items].slice(0, 24))
+        setHistory((items) =>
+          [
+            {
+              id: crypto.randomUUID(),
+              imageUrl: firstUrl,
+              prompt: request.prompt,
+              createdAt: new Date().toISOString()
+            },
+            ...items
+          ].slice(0, 24)
+        )
       }
       if (event === 'error') throw new Error(data.message || '生成失败')
     }
