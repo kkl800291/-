@@ -4,16 +4,27 @@ type FieldProps = {
   label: string
   hint?: string
   error?: string
+  htmlFor?: string
+  hintId?: string
+  errorId?: string
   children: ReactNode
 }
 
-export function Field({ label, hint, error, children }: FieldProps) {
+export function Field({ label, hint, error, htmlFor, hintId, errorId, children }: FieldProps) {
   return (
-    <label className="grid gap-2 text-sm">
+    <label htmlFor={htmlFor} className="grid gap-2 text-sm">
       <span className="font-semibold text-ink">{label}</span>
       {children}
-      {error ? <span className="text-xs text-coral">{error}</span> : null}
-      {hint && !error ? <span className="text-xs text-ink/55">{hint}</span> : null}
+      {error ? (
+        <span id={errorId} className="text-xs text-coral">
+          {error}
+        </span>
+      ) : null}
+      {hint && !error ? (
+        <span id={hintId} className="text-xs text-ink/55">
+          {hint}
+        </span>
+      ) : null}
     </label>
   )
 }

@@ -4,7 +4,10 @@ import { clsx } from 'clsx'
 export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={clsx('min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none focus:border-moss', className)}
+      className={clsx(
+        'min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none focus:border-moss focus-visible:ring-2 focus-visible:ring-moss focus-visible:ring-offset-2',
+        className
+      )}
       {...props}
     />
   )
