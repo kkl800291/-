@@ -28,14 +28,10 @@ export function StudioApp() {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [history, setHistory] = useState<StoredImage[]>([])
+  const [history, setHistory] = useState<StoredImage[]>(() => readHistory())
   const abortControllerRef = useRef<AbortController | null>(null)
   const inFlightRef = useRef(false)
   const requestIdRef = useRef(0)
-
-  useEffect(() => {
-    setHistory(readHistory())
-  }, [])
 
   useEffect(() => {
     writeHistory(history)
