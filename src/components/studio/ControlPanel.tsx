@@ -25,8 +25,8 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
 
   return (
     <section className="grid gap-5">
-      <Field label="模型">
-        <Select value={value.model} onChange={(event) => update({ model: event.target.value as ImageGenerationRequest['model'] })}>
+      <Field label="模型" htmlFor="studio-model">
+        <Select id="studio-model" value={value.model} onChange={(event) => update({ model: event.target.value as ImageGenerationRequest['model'] })}>
           {RIGHTCODES_MODELS.map((model) => (
             <option key={model.id} value={model.id}>
               {model.name}

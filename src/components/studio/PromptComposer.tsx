@@ -17,8 +17,8 @@ type PromptComposerProps = {
 export function PromptComposer({ prompt, negativePrompt, loading, onPromptChange, onNegativePromptChange, onSubmit }: PromptComposerProps) {
   return (
     <section className="grid gap-4">
-      <Field label="提示词">
-        <Textarea value={prompt} onChange={(event) => onPromptChange(event.target.value)} placeholder="描述你想生成的画面..." />
+      <Field label="提示词" htmlFor="studio-prompt">
+        <Textarea id="studio-prompt" value={prompt} onChange={(event) => onPromptChange(event.target.value)} placeholder="描述你想生成的画面..." />
       </Field>
       <Field label="排除内容">
         <input

@@ -10,7 +10,7 @@ export const RIGHTCODES_MODELS = [
   {
     id: 'gpt-image-2-vip',
     name: 'GPT Image 2 VIP',
-    description: 'Official direct model with 1K, 2K, and 4K support.',
+    description: 'Official direct model with multi-resolution output support.',
     resolutions: ['1K', '2K', '4K'],
     defaultResolution: '2K',
     supportsReferenceImage: true

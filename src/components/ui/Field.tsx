@@ -12,8 +12,14 @@ type FieldProps = {
 
 export function Field({ label, hint, error, htmlFor, hintId, errorId, children }: FieldProps) {
   return (
-    <label htmlFor={htmlFor} className="grid gap-2 text-sm">
-      <span className="font-semibold text-ink">{label}</span>
+    <div className="grid gap-2 text-sm">
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="font-semibold text-ink">
+          {label}
+        </label>
+      ) : (
+        <span className="font-semibold text-ink">{label}</span>
+      )}
       {children}
       {error ? (
         <span id={errorId} className="text-xs text-coral">
@@ -25,6 +31,6 @@ export function Field({ label, hint, error, htmlFor, hintId, errorId, children }
           {hint}
         </span>
       ) : null}
-    </label>
+    </div>
   )
 }
