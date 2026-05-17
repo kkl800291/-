@@ -37,6 +37,7 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
 
       <Field label="分辨率" hint={capability.description}>
         <SegmentedControl
+          label="分辨率"
           value={value.resolution}
           options={RESOLUTIONS.map((resolution) => ({
             label: resolution,
@@ -48,15 +49,16 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
       </Field>
 
       <Field label="比例">
-        <SegmentedControl value={value.aspectRatio} options={ASPECT_RATIOS.map((ratio) => ({ label: ratio, value: ratio }))} onChange={(aspectRatio) => update({ aspectRatio })} />
+        <SegmentedControl label="比例" value={value.aspectRatio} options={ASPECT_RATIOS.map((ratio) => ({ label: ratio, value: ratio }))} onChange={(aspectRatio) => update({ aspectRatio })} />
       </Field>
 
       <Field label="质量">
-        <SegmentedControl value={value.quality} options={QUALITIES.map((quality) => ({ label: quality, value: quality }))} onChange={(quality) => update({ quality })} />
+        <SegmentedControl label="质量" value={value.quality} options={QUALITIES.map((quality) => ({ label: quality, value: quality }))} onChange={(quality) => update({ quality })} />
       </Field>
 
-      <Field label="数量">
+      <Field label="数量" htmlFor="studio-count">
         <input
+          id="studio-count"
           className="min-h-11 rounded-md border border-line bg-white px-3"
           type="number"
           min={1}
@@ -70,8 +72,9 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
         />
       </Field>
 
-      <Field label="Seed">
+      <Field label="Seed" htmlFor="studio-seed">
         <input
+          id="studio-seed"
           className="min-h-11 rounded-md border border-line bg-white px-3"
           type="number"
           min={0}
@@ -80,8 +83,9 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
         />
       </Field>
 
-      <Field label="风格">
+      <Field label="风格" htmlFor="studio-style">
         <input
+          id="studio-style"
           className="min-h-11 rounded-md border border-line bg-white px-3"
           value={value.styleHint}
           onChange={(event) => update({ styleHint: event.target.value })}
@@ -89,8 +93,9 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
         />
       </Field>
 
-      <Field label="参考图 URL">
+      <Field label="参考图 URL" htmlFor="studio-reference-image-url">
         <input
+          id="studio-reference-image-url"
           className="min-h-11 rounded-md border border-line bg-white px-3"
           value={value.referenceImageUrl ?? ''}
           onChange={(event) => update({ referenceImageUrl: event.target.value })}

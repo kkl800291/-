@@ -20,8 +20,9 @@ export function PromptComposer({ prompt, negativePrompt, loading, onPromptChange
       <Field label="提示词" htmlFor="studio-prompt">
         <Textarea id="studio-prompt" value={prompt} onChange={(event) => onPromptChange(event.target.value)} placeholder="描述你想生成的画面..." />
       </Field>
-      <Field label="排除内容">
+      <Field label="排除内容" htmlFor="studio-negative-prompt">
         <input
+          id="studio-negative-prompt"
           className="min-h-11 rounded-md border border-line bg-white px-3"
           value={negativePrompt}
           onChange={(event) => onNegativePromptChange(event.target.value)}

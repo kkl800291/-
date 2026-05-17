@@ -7,14 +7,15 @@ type Option<T extends string> = {
 }
 
 type SegmentedControlProps<T extends string> = {
+  label: string
   value: T
   options: Option<T>[]
   onChange: (value: T) => void
 }
 
-export function SegmentedControl<T extends string>({ value, options, onChange }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ label, value, options, onChange }: SegmentedControlProps<T>) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-1 rounded-md border border-line bg-white/65 p-1">
+    <div aria-label={label} role="group" className="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-1 rounded-md border border-line bg-white/65 p-1">
       {options.map((option) => (
         <button
           key={option.value}
