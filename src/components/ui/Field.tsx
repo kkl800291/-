@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { clsx } from 'clsx'
 
 type FieldProps = {
   label: string
@@ -7,18 +8,19 @@ type FieldProps = {
   htmlFor?: string
   hintId?: string
   errorId?: string
+  className?: string
   children: ReactNode
 }
 
-export function Field({ label, hint, error, htmlFor, hintId, errorId, children }: FieldProps) {
+export function Field({ label, hint, error, htmlFor, hintId, errorId, className, children }: FieldProps) {
   return (
-    <div className="grid gap-2 text-sm">
+    <div className={clsx('grid gap-2 text-sm', className)}>
       {htmlFor ? (
-        <label htmlFor={htmlFor} className="font-semibold text-ink">
+        <label htmlFor={htmlFor} className="inline-flex w-fit font-semibold text-paper">
           {label}
         </label>
       ) : (
-        <span className="font-semibold text-ink">{label}</span>
+        <span className="font-semibold text-paper">{label}</span>
       )}
       {children}
       {error ? (
@@ -27,7 +29,7 @@ export function Field({ label, hint, error, htmlFor, hintId, errorId, children }
         </span>
       ) : null}
       {hint && !error ? (
-        <span id={hintId} className="text-xs text-ink/55">
+        <span id={hintId} className="text-xs leading-5 text-paper/50">
           {hint}
         </span>
       ) : null}

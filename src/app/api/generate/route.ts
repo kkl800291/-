@@ -1,106 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createRightCodesChatStream } from '@/lib/rightcodes/client'
+import { createRightCodesDrawImageUrls } from '@/lib/rightcodes/client'
 import { imageGenerationRequestSchema } from '@/lib/rightcodes/schema'
-import { encodeStreamEvent, extractImageUrlsFromText, extractNewImageUrlsFromText } from '@/lib/rightcodes/stream'
+import { encodeStreamEvent } from '@/lib/rightcodes/stream'
 
 export const runtime = 'nodejs'
 
-export async function POST(request: Request) {
-  let payload: unknown
-  try {
-    payload = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
-  }
-
-  const parsed = imageGenerationRequestSchema.safeParse(payload)
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid generation request.', issues: parsed.error.flatten() },
-      { status: 400 }
-    )
-  }
-
-  let upstream: Response
-  try {
-    upstream = await createRightCodesChatStream(parsed.data)
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to start generation.' }, { status: 500 })
-  }
-
-  if (!upstream.ok || !upstream.body) {
-    const detail = upstream.statusText || 'Upstream provider returned an error.'
-    return NextResponse.json({ error: 'Right Codes request failed.', detail }, { status: upstream.status || 502 })
-  }
-
-  const encoder = new TextEncoder()
-  const decoder = new TextDecoder()
-  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      let combinedText = ''
-      const emittedUrls = new Set<string>()
-
-      controller.enqueue(encoder.encode(encodeStreamEvent('status', { message: 'Generation started.' })))
-
-      reader = upstream.body!.getReader()
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) {
-            const finalChunk = decoder.decode()
-            if (finalChunk) {
-              combinedText += finalChunk
-              controller.enqueue(encoder.encode(encodeStreamEvent('chunk', { text: finalChunk })))
-              const finalUrls = extractNewImageUrlsFromText(combinedText, emittedUrls)
-              if (finalUrls.length > 0) {
-                controller.enqueue(encoder.encode(encodeStreamEvent('images', { urls: finalUrls })))
-              }
-            }
-            break
-          }
-
-          const chunk = decoder.decode(value, { stream: true })
-          combinedText += chunk
-          controller.enqueue(encoder.encode(encodeStreamEvent('chunk', { text: chunk })))
-
-          const urls = extractNewImageUrlsFromText(combinedText, emittedUrls)
-          if (urls.length > 0) {
-            controller.enqueue(encoder.encode(encodeStreamEvent('images', { urls })))
-          }
-        }
-
-        controller.enqueue(encoder.encode(encodeStreamEvent('done', { urls: extractImageUrlsFromText(combinedText) })))
-      } catch (error) {
-        controller.enqueue(
-          encoder.encode(encodeStreamEvent('error', { message: error instanceof Error ? error.message : 'Stream failed.' }))
-        )
-      } finally {
-        reader?.releaseLock()
-        reader = null
-        try {
-          controller.close()
-        } catch {
-          // Stream may already be closed during cancellation.
-        }
-      }
-    },
-    async cancel(reason) {
-      if (!reader) return
-      try {
-        await reader.cancel(reason)
-      } catch {
-        // Ignore cancellation errors from upstream stream.
-      } finally {
-        reader.releaseLock()
-        reader = null
-      }
-    }
-  })
-
+function createStreamResponse(stream: ReadableStream) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream; charset=utf-8',
@@ -108,4 +13,65 @@ export async function POST(request: Request) {
       Connection: 'keep-alive'
     }
   })
+}
+
+export async function POST(request: Request) {
+  const requestId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+
+  let payload: unknown
+  try {
+    payload = await request.json()
+  } catch {
+    console.warn(`[draw][${requestId}] invalid JSON body`)
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
+  }
+
+  const parsed = imageGenerationRequestSchema.safeParse(payload)
+
+  if (!parsed.success) {
+    console.warn(`[draw][${requestId}] request schema validation failed`, JSON.stringify(parsed.error.flatten()))
+    return NextResponse.json(
+      { error: 'Invalid generation request.', issues: parsed.error.flatten() },
+      { status: 400 }
+    )
+  }
+
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      console.info(
+        `[draw][${requestId}] generation started`,
+        JSON.stringify({
+          model: parsed.data.model,
+          resolution: parsed.data.resolution,
+          aspectRatio: parsed.data.aspectRatio,
+          quality: parsed.data.quality,
+          count: parsed.data.count,
+          promptLength: parsed.data.prompt.length
+        })
+      )
+      try {
+        controller.enqueue(encoder.encode(encodeStreamEvent('status', { message: 'Generation started.' })))
+        controller.enqueue(encoder.encode(encodeStreamEvent('status', { message: '正在等待图片生成结果...' })))
+
+        const urls = await createRightCodesDrawImageUrls(parsed.data, { requestId })
+
+        controller.enqueue(encoder.encode(encodeStreamEvent('images', { urls })))
+        controller.enqueue(encoder.encode(encodeStreamEvent('done', { urls })))
+        console.info(`[draw][${requestId}] generation succeeded`, JSON.stringify({ imageCount: urls.length }))
+      } catch (error) {
+        const message = error instanceof Error && error.message.trim() ? error.message : '图片生成失败，请稍后重试。'
+        console.error(`[draw][${requestId}] generation failed`, message)
+        controller.enqueue(
+          encoder.encode(encodeStreamEvent('error', { message }))
+        )
+      } finally {
+        controller.close()
+      }
+    }
+  })
+
+  return createStreamResponse(stream)
 }

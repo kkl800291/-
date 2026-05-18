@@ -23,16 +23,22 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
     onChange(next)
   }
 
+  const inputClassName =
+    'min-h-11 rounded-[6px] border border-white/20 bg-[#11151b] px-3 text-sm text-paper outline-none transition placeholder:text-paper/40 focus:border-acid focus-visible:ring-2 focus-visible:ring-acid focus-visible:ring-offset-2 focus-visible:ring-offset-graphite'
+
   return (
     <section className="grid gap-5">
       <Field label="模型" htmlFor="studio-model">
-        <Select id="studio-model" value={value.model} onChange={(event) => update({ model: event.target.value as ImageGenerationRequest['model'] })}>
-          {RIGHTCODES_MODELS.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.name}
-            </option>
-          ))}
-        </Select>
+        <Select
+          id="studio-model"
+          ariaLabel="模型"
+          value={value.model}
+          options={RIGHTCODES_MODELS.map((model) => ({
+            value: model.id,
+            label: model.name
+          }))}
+          onChange={(model) => update({ model: model as ImageGenerationRequest['model'] })}
+        />
       </Field>
 
       <Field label="分辨率" hint={capability.description}>
@@ -59,7 +65,7 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
       <Field label="数量" htmlFor="studio-count">
         <input
           id="studio-count"
-          className="min-h-11 rounded-md border border-line bg-white px-3"
+          className={inputClassName}
           type="number"
           min={1}
           max={4}
@@ -75,7 +81,7 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
       <Field label="Seed" htmlFor="studio-seed">
         <input
           id="studio-seed"
-          className="min-h-11 rounded-md border border-line bg-white px-3"
+          className={inputClassName}
           type="number"
           min={0}
           value={value.seed ?? ''}
@@ -86,20 +92,10 @@ export function ControlPanel({ value, onChange }: ControlPanelProps) {
       <Field label="风格" htmlFor="studio-style">
         <input
           id="studio-style"
-          className="min-h-11 rounded-md border border-line bg-white px-3"
+          className={inputClassName}
           value={value.styleHint}
           onChange={(event) => update({ styleHint: event.target.value })}
           placeholder="例如：电影感、产品摄影、日系插画"
-        />
-      </Field>
-
-      <Field label="参考图 URL" htmlFor="studio-reference-image-url">
-        <input
-          id="studio-reference-image-url"
-          className="min-h-11 rounded-md border border-line bg-white px-3"
-          value={value.referenceImageUrl ?? ''}
-          onChange={(event) => update({ referenceImageUrl: event.target.value })}
-          placeholder="https://..."
         />
       </Field>
     </section>

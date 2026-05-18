@@ -64,4 +64,10 @@ describe('writeHistory', () => {
     expect(stored).toHaveLength(MAX_HISTORY_ITEMS)
     expect(stored).toEqual(items.slice(0, MAX_HISTORY_ITEMS))
   })
+
+  it('does not persist temporary local object URLs', () => {
+    writeHistory([{ ...baseHistoryItem, cachedImageKey: 'image-1', localImageUrl: 'blob:temporary-preview' }])
+
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual([{ ...baseHistoryItem, cachedImageKey: 'image-1' }])
+  })
 })

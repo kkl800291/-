@@ -6,21 +6,30 @@ export type Resolution = (typeof RESOLUTIONS)[number]
 export type AspectRatio = (typeof ASPECT_RATIOS)[number]
 export type Quality = (typeof QUALITIES)[number]
 
-export const RIGHTCODES_MODELS = [
-  {
-    id: 'gpt-image-2-vip',
-    name: 'GPT Image 2 VIP',
-    description: 'Official direct model with 1K, 2K, and 4K support.',
-    resolutions: ['1K', '2K', '4K'],
-    defaultResolution: '2K',
-    supportsReferenceImage: true
-  },
+type RightCodesModelDefinition = {
+  id: string
+  name: string
+  description: string
+  resolutions: readonly Resolution[]
+  defaultResolution: Resolution
+  supportsReferenceImage: boolean
+}
+
+const RIGHTCODES_MODEL_DEFINITIONS = [
   {
     id: 'gpt-image-2',
     name: 'GPT Image 2',
-    description: 'Special price model with 1K output.',
+    description: '标准图像生成模型，支持 1K 输出。',
     resolutions: ['1K'],
     defaultResolution: '1K',
+    supportsReferenceImage: false
+  },
+  {
+    id: 'gpt-image-2-vip',
+    name: 'GPT Image 2 VIP',
+    description: '高阶图像生成模型，支持 1K、2K 和 4K 输出。',
+    resolutions: ['1K', '2K', '4K'],
+    defaultResolution: '2K',
     supportsReferenceImage: true
   },
   {
@@ -47,16 +56,11 @@ export const RIGHTCODES_MODELS = [
     defaultResolution: '2K',
     supportsReferenceImage: true
   }
-] as const satisfies ReadonlyArray<{
-  id: string
-  name: string
-  description: string
-  resolutions: readonly Resolution[]
-  defaultResolution: Resolution
-  supportsReferenceImage: boolean
-}>
+] as const satisfies ReadonlyArray<RightCodesModelDefinition>
 
-export type RightCodesModelId = (typeof RIGHTCODES_MODELS)[number]['id']
+export type RightCodesModelId = (typeof RIGHTCODES_MODEL_DEFINITIONS)[number]['id']
+
+export const RIGHTCODES_MODELS: ReadonlyArray<RightCodesModelDefinition & { id: RightCodesModelId }> = RIGHTCODES_MODEL_DEFINITIONS
 
 export type ModelCapability = {
   id: RightCodesModelId

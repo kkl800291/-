@@ -3,6 +3,8 @@ export type StoredImage = {
   imageUrl: string
   prompt: string
   createdAt: string
+  cachedImageKey?: string
+  localImageUrl?: string
 }
 
 export const STORAGE_KEY = 'rightcodes-history'
@@ -15,8 +17,14 @@ function isStoredImage(value: unknown): value is StoredImage {
     typeof (value as { id?: unknown }).id === 'string' &&
     typeof (value as { imageUrl?: unknown }).imageUrl === 'string' &&
     typeof (value as { prompt?: unknown }).prompt === 'string' &&
-    typeof (value as { createdAt?: unknown }).createdAt === 'string'
+    typeof (value as { createdAt?: unknown }).createdAt === 'string' &&
+    (typeof (value as { cachedImageKey?: unknown }).cachedImageKey === 'undefined' || typeof (value as { cachedImageKey?: unknown }).cachedImageKey === 'string')
   )
+}
+
+function toPersistedImage(item: StoredImage) {
+  const { localImageUrl, ...persistedItem } = item
+  return persistedItem
 }
 
 export function readHistory(): StoredImage[] {
@@ -41,7 +49,7 @@ export function writeHistory(items: StoredImage[]) {
   if (typeof window === 'undefined') return
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_HISTORY_ITEMS)))
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_HISTORY_ITEMS).map(toPersistedImage)))
   } catch {
     // Storage can be unavailable in restricted browsing contexts.
   }

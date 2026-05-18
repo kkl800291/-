@@ -11,10 +11,10 @@ export function Button({ icon, variant = 'secondary', className, children, type 
     <button
       type={type}
       className={clsx(
-        'inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-moss focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55',
-        variant === 'primary' && 'border-moss bg-moss text-white hover:bg-[#176548]',
-        variant === 'secondary' && 'border-line bg-panel text-ink hover:border-ink/40',
-        variant === 'ghost' && 'border-transparent bg-transparent text-ink hover:bg-ink/5',
+        'inline-flex min-h-10 items-center justify-center gap-2 rounded-[6px] border px-4 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acid focus-visible:ring-offset-2 focus-visible:ring-offset-graphite disabled:cursor-not-allowed disabled:opacity-45',
+        variant === 'primary' && 'border-acid bg-acid text-ink shadow-[0_16px_32px_rgba(215,255,79,0.18)] hover:bg-[#c8f344]',
+        variant === 'secondary' && 'border-white/20 bg-porcelain/10 text-paper hover:border-cyan/60 hover:bg-cyan/10',
+        variant === 'ghost' && 'border-transparent bg-transparent text-paper/80 hover:bg-white/10 hover:text-paper',
         className
       )}
       {...props}

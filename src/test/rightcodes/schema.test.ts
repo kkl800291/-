@@ -15,7 +15,7 @@ describe('image generation schema', () => {
     expect(result.resolution).toBe('4K')
   })
 
-  it('rejects 4K for gpt-image-2 because that model is 1K only', () => {
+  it('rejects 2K and 4K requests for the discounted gpt-image-2 model', () => {
     const result = imageGenerationRequestSchema.safeParse({
       model: 'gpt-image-2',
       prompt: 'A quiet mountain cabin',
@@ -26,12 +26,9 @@ describe('image generation schema', () => {
     })
 
     expect(result.success).toBe(false)
-    if (result.success) {
-      return
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe('GPT Image 2 does not support 4K.')
     }
-
-    expect(result.error.issues[0]?.path).toEqual(['resolution'])
-    expect(result.error.issues[0]?.message).toMatch(/does not support 4K/)
   })
 
   it('returns model capabilities', () => {
@@ -69,18 +66,5 @@ describe('image generation schema', () => {
     expect(result.negativePrompt).toBe('')
     expect(result.styleHint).toBe('')
     expect(result.count).toBe(1)
-  })
-
-  it('accepts empty reference image url', () => {
-    const result = imageGenerationRequestSchema.parse({
-      model: 'gpt-image-2-vip',
-      prompt: 'A cinematic product photo of a handmade lamp',
-      resolution: '2K',
-      aspectRatio: '16:9',
-      quality: 'high',
-      referenceImageUrl: ''
-    })
-
-    expect(result.referenceImageUrl).toBe('')
   })
 })

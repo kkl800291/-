@@ -22,7 +22,6 @@ export const imageGenerationRequestSchema = z
     quality: z.enum(QUALITIES),
     count: z.number().int().min(1).max(4).default(1),
     seed: z.number().int().min(0).max(4294967295).optional(),
-    referenceImageUrl: z.string().url().optional().or(z.literal('')),
     styleHint: z.string().trim().max(240).optional().default('')
   })
   .superRefine((value, context) => {
